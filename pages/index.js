@@ -41,8 +41,16 @@ function Titulo(props) {
 
 export default function PaginaInicial() {
   const [username, setUsername] = React.useState('zz4fff');
-  const [valueLength, setValueLength] = React.useState(6);
+  const [warning, setWarning] = React.useState(false);
   const roteamento = useRouter();
+
+  const handleEnterChat = () => {
+    if (username.length > 2) {
+      roteamento.push('/chat')
+    } else {
+      setWarning(true)
+    }
+  }
 
   return (
     <>
@@ -74,9 +82,9 @@ export default function PaginaInicial() {
           {/* Formulário */}
           <Box
             as="form"
-            onSubmit={function (infosDoEvento) {
-              infosDoEvento.preventDefault();
-              roteamento.push('/chat');
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleEnterChat();
             }}
             styleSheet={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -98,10 +106,7 @@ export default function PaginaInicial() {
               value={username}
               onChange={function (event) {
                 const valor = event.target.value;
-                const tamanho = valor.length;
-
                 setUsername(valor);
-                setValueLength(tamanho);
               }
 
               }
@@ -118,8 +123,6 @@ export default function PaginaInicial() {
             <Button
               type='submit'
               label='Entrar'
-              enabled={valueLength > 2}
-              
               fullWidth
               buttonColors={{
                 contrastColor: appConfig.theme.colors.neutrals["000"],
