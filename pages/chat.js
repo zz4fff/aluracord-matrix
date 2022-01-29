@@ -1,13 +1,30 @@
-import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React from 'react';
-import appConfig from '../config.json';
-import { createClient } from '@supabase/supabase-js';
 
+import { Box, Text, TextField, Image, Button } from '@skynexui/components';
+import { createClient } from '@supabase/supabase-js';
+import { useRouter } from 'next/router';
+
+import appConfig from '../config.json';
+
+import { ButtonSendSticker } from '../src/components/ButtonSendSticker';
+
+// Como fazer AJAX: https://medium.com/@omariosouto/entendendo-como-fazer-ajax-com-a-fetchapi-977ff20da3c6
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzM0MDY5NiwiZXhwIjoxOTU4OTE2Njk2fQ.pxnyh-xVXcPbh-qhB59DznDq2HCJjRhM8cktR9oK9LY';
 const SUPABASE_URL = 'https://roqwzwxahpqtjcgunomg.supabase.co';
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+function escutaMensagensEmTempoReal(adicionaMensagem) {
+    return supabaseClient
+        .from('mensagens')
+        .on('INSERT', (respostaLive) => {
+            adicionaMensagem(respostaLive.new); 
+        })
+        .subscribe()
+}
+
 export default function ChatPage() {
+    const roteamento = useRouter();
+    const usuarioLogado = roteamento.query.username;
     const [mensagem, setMensagem] = React.useState('');
     const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
 
@@ -29,15 +46,39 @@ export default function ChatPage() {
             .select('*')
             .order('id', { ascending: false })
             .then(({ data }) => {
-                console.log('Dados da consulta: ', data);
+                // console.log('Dados da consulta: ', data);
                 setListaDeMensagens(data);
             });
+        
+        const subscription = escutaMensagensEmTempoReal((novaMensagem) => {
+            // console.log('Nova mensagem: ', novaMensagem);
+            // console.log('listaDeMensagens: ', listaDeMensagens);
+
+            // Quero reusar um valor de referência (objeto/array)
+            // Passar uma função pro setState
+
+            // setListaDeMensagens([
+            //     novaMensagem,
+            //     ...listaDeMensagens
+            // ])
+            setListaDeMensagens((valorAtualDaLista) => {
+                // console.log('valorAtualDaLista: ', valorAtualDaLista);
+                return [
+                    novaMensagem,
+                    ...valorAtualDaLista,
+                ]
+            });
+        });
+
+        return () => {
+            subscription.unsubscribe();
+        }
     }, []);
 
     function handleNovaMensagem(novaMensagem) {
         const mensagem = {
             // id: listaDeMensagens.length + 1,
-            de: 'vanessametonini',
+            de: usuarioLogado,
             texto: novaMensagem,
             // created_at: (new Date().toLocaleDateString()) + ` - ` + (new Date().toLocaleTimeString()),
         };
@@ -50,14 +91,10 @@ export default function ChatPage() {
             ])
             .then(({ data }) => {
                 console.log('Criando mensagem: ', data);
-                setListaDeMensagens([
-                    data[0],
-                    ...listaDeMensagens,
-                ]);
-                setMensagem('');
             });
-
-    }
+                
+            setMensagem('');
+        }
 
     return (
         <Box
@@ -134,6 +171,13 @@ export default function ChatPage() {
                                 backgroundColor: appConfig.theme.colors.neutrals[800],
                                 marginRight: '12px',
                                 color: appConfig.theme.colors.neutrals[200],
+                            }}
+                        />
+                        {/* CallBack */}
+                        <ButtonSendSticker 
+                            onStickerClick={(sticker) => {
+                                // console.log('[USANDO O COMPONENTE] Salva esse sticker no banco', sticker);
+                                handleNovaMensagem(':sticker: ' + sticker);
                             }}
                         />
                     </Box>
@@ -216,9 +260,25 @@ function MessageList(props) {
                                 tag="span"
                             >
                                 {mensagem.created_at}
+                                {/* (new Date().toLocalDateString()) */}
                             </Text>
                         </Box>
-                        {mensagem.texto}
+                        {/* {[Declarativo] */}
+                        {/* {Condicional: {mensagem.texto.startsWith(':sticker:').toString()}} */}
+}                       {mensagem.texto.startsWith(':sticker:')
+                            ? (
+                                <Image src={mensagem.texto.replace(':sticker:', '')} />
+                            )
+                            : (
+                                mensagem.texto
+                            )
+                        }
+                        {/* {if mensagem de texto possui stickers:
+                            mostra a imagem
+                        else
+                            mensagem.texto
+                        } */}
+                        {/* {mensagem.texto} */}
                     </Text>
                 );
             })}

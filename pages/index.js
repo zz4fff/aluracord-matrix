@@ -5,9 +5,6 @@ import { useRouter } from 'next/router';
 
 import appConfig from '../config.json';
 
-
-
-
 // Componente React
 function Titulo(props) {
   const Tag = props.tag || 'h1';
@@ -26,6 +23,7 @@ function Titulo(props) {
   )
 }
 
+// Componente React
 // function HomePage() {
 //   // JSX
 //   return (
@@ -46,7 +44,7 @@ export default function PaginaInicial() {
 
   const handleEnterChat = () => {
     if (username.length > 2) {
-      roteamento.push('/chat')
+      roteamento.push(`/chat?username=${username}`)
     } else {
       setWarning(true)
     }
@@ -102,6 +100,18 @@ export default function PaginaInicial() {
               {appConfig.name}
             </Text>
 
+            {/* <input
+                            type="text"
+                            value={username}
+                            onChange={function (event) {
+                                console.log('usuario digitou', event.target.value);
+                                // Onde ta o valor?
+                                const valor = event.target.value;
+                                // Trocar o valor da variavel
+                                // através do React e avise quem precisa
+                                setUsername(valor);
+                            }}
+                        /> */}
             <TextField
               value={username}
               onChange={function (event) {
